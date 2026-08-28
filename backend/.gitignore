@@ -1,0 +1,3 @@
+node_modules
+*.log
+hydraulic_billing.db-journal

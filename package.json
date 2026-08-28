@@ -1,0 +1,11 @@
+{
+  "name": "hydraulic-machinery-billing-system",
+  "version": "1.0.0",
+  "description": "Tax Invoices & Quotations Billing Software for Hydraulic Machinery Business",
+  "scripts": {
+    "dev:backend": "cmd /c \"cd backend && npm run dev\"",
+    "dev:frontend": "cmd /c \"cd frontend && npm run dev\"",
+    "start:backend": "cmd /c \"cd backend && npm start\"",
+    "build:frontend": "cmd /c \"cd frontend && npm run build\""
+  }
+}
