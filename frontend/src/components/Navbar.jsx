@@ -5,7 +5,6 @@ import {
   Users, 
   Settings, 
   LayoutDashboard,
-  Building2,
   Hammer,
   FileSignature,
   Truck
@@ -16,20 +15,33 @@ export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
     <header className="bg-slate-900 text-white shadow-md no-print border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo & Branding */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-            <div className="bg-gradient-to-br from-sky-500 to-blue-700 text-white px-3 py-1.5 rounded-xl font-black text-xl tracking-tight shadow-md ring-1 ring-white/20 flex items-center justify-center">
-              DK
+          {/* Logo & Branding - Exact Original 3D DK Swirl Logo with Transparent Background */}
+          <div 
+            className="flex items-center space-x-3 cursor-pointer group py-1" 
+            onClick={() => setActiveTab('dashboard')}
+          >
+            {/* Transparent Original Logo Display */}
+            <div className="flex items-center justify-center flex-shrink-0 h-10 w-10">
+              <img 
+                src="/dk_logo.png" 
+                alt="DK Enterprise Logo" 
+                className="h-10 w-10 object-contain drop-shadow-md"
+              />
             </div>
-            <div>
-              <h1 className="font-black text-xl text-white tracking-wide">
+
+            {/* Title & Subtitle */}
+            <div className="flex flex-col justify-center">
+              <h1 className="font-black text-lg text-white tracking-wide uppercase leading-tight whitespace-nowrap">
                 DK Enterprise
               </h1>
+              <span className="text-[11px] text-sky-400 font-bold tracking-wide whitespace-nowrap leading-tight">
+                Sales and Service Hydraulic Spare
+              </span>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex space-x-1">
+          <nav className="hidden md:flex items-center space-x-1">
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${

@@ -5,9 +5,6 @@ import {
   ArrowLeft, 
   Edit3, 
   RefreshCw, 
-  Building2, 
-  Landmark, 
-  Wrench,
   FileText,
   Sliders,
   Truck
@@ -100,8 +97,8 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted, onCr
 
   return (
     <div className="space-y-6">
-      {/* Top Action & Letterhead Options Control Bar (Hidden during printing) */}
-      <div className="no-print bg-slate-900 text-white p-5 rounded-2xl shadow-lg space-y-4">
+      {/* Top Action Bar (Hidden during printing) */}
+      <div className="no-print bg-slate-900 text-white p-5 rounded-2xl shadow-lg space-y-4 max-w-4xl mx-auto">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <button
             onClick={onBack}
@@ -158,7 +155,7 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted, onCr
                   !useLetterheadMode ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                🖨️ Digital Header (Plain Paper)
+                📄 Official Bill Book Format (Red Border)
               </button>
               <button
                 onClick={() => setUseLetterheadMode(true)}
@@ -166,7 +163,7 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted, onCr
                   useLetterheadMode ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                📜 Pre-Printed Letter Pad
+                📜 Pre-Printed Letter Pad Blank
               </button>
             </div>
           </div>
@@ -190,232 +187,231 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted, onCr
         </div>
       </div>
 
-      {/* Printable Sheet (A4 format) */}
-      <div className="print-area bg-white p-8 rounded-2xl border border-slate-300 shadow-xl max-w-4xl mx-auto text-slate-900 font-sans">
+      {/* Printable Sheet - Replicating original paper bill book layout from user photo */}
+      <div className="print-area bg-white p-6 rounded-xl border-2 border-red-700 shadow-xl max-w-4xl mx-auto text-slate-900 font-sans">
         
         {useLetterheadMode ? (
           <div 
             style={{ height: `${headerMarginTop}px` }} 
-            className="w-full flex items-center justify-center border-b border-dashed border-slate-300 no-print"
+            className="w-full flex items-center justify-center border-b border-dashed border-red-300 no-print"
           >
             <span className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-md border border-amber-200">
-              📜 Pre-printed Letterhead Top Blank Space ({headerMarginTop}px) - Will print content below your physical letter pad header
+              📜 Pre-printed Letterhead Top Blank Space ({headerMarginTop}px)
             </span>
           </div>
         ) : (
-          <div className="flex items-start justify-between border-b-2 border-slate-900 pb-5">
-            <div className="flex items-start space-x-3">
-              <div className="bg-gradient-to-br from-sky-500 to-blue-700 text-white px-3.5 py-2 rounded-xl font-black text-2xl tracking-tight shadow-md">
-                DK
+          /* Header Layout - Original Paper Bill Book Header */
+          <div className="border-b-2 border-red-700 pb-3 mb-3">
+            <div className="grid grid-cols-12 items-start gap-2">
+              {/* Left Column: Official Transparent Original Logo */}
+              <div className="col-span-3 flex items-center justify-start">
+                <img 
+                  src="/dk_logo.png" 
+                  alt="DK Enterprise Logo" 
+                  className="max-h-24 w-auto object-contain"
+                />
               </div>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-                  {company.name || 'DK Enterprise'}
-                </h1>
-                <p className="text-xs font-medium text-slate-600 mt-0.5">
-                  {company.tagline || 'Hydraulic Machinery, Spare Parts & Servicing Specialists'}
-                </p>
-                <p className="text-xs text-slate-600 mt-1 max-w-md">
-                  {company.address}
-                </p>
-                <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                  Phone: {company.phone} | Email: {company.email}
-                </p>
-              </div>
-            </div>
 
-            <div className="text-right">
-              <div className="inline-block bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-lg text-right">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">GSTIN NUMBER</span>
-                <span className="text-sm font-mono font-bold text-slate-900">{company.gstin}</span>
+              {/* Center Column: TAX INVOICE + DK ENTERPRISE + GSTIN */}
+              <div className="col-span-5 text-center flex flex-col items-center">
+                <div className="border-2 border-red-700 rounded-md px-3 py-0.5 mb-1 inline-block">
+                  <span className="text-xs font-black text-red-800 tracking-wider uppercase">
+                    {doc.doc_type === 'TAX_INVOICE' && 'TAX INVOICE'}
+                    {doc.doc_type === 'LABOUR_BILL' && 'TAX INVOICE (LABOUR BILL)'}
+                    {doc.doc_type === 'QUOTATION' && 'QUOTATION / PRICE ESTIMATE'}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-black text-[#0C2B59] tracking-tight font-serif uppercase">
+                  DK ENTERPRISE
+                </h1>
+                <p className="text-xs font-black text-slate-900 tracking-wide mt-0.5">
+                  GSTIN : <span className="font-mono font-bold text-red-800">{company.gstin || '24CWDPP5055P1Z0'}</span>
+                </p>
+              </div>
+
+              {/* Right Column: Phone, Tagline, Address, Email */}
+              <div className="col-span-4 text-right text-[11px] font-semibold text-slate-800 leading-tight space-y-0.5">
+                <p className="font-bold text-red-800">(M) {company.phone || '9925802443'}</p>
+                <p className="font-bold text-[#0C2B59]">{company.tagline || 'Sales and Service Hydraulic Spare'}</p>
+                <p className="text-[10px] text-slate-700 whitespace-pre-line leading-tight">
+                  {company.address || 'C-506, Pratishtha Sky, B/h Ashirwad Avenue, Opp. Shailby Hospital, Hari Darshan Cross Road, Naroda, Ahmedabad-382330'}
+                </p>
+                <p className="text-[10px] text-slate-700">E-mail : {company.email || 'patel.kv75@gmail.com'}</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Document Title Banner */}
-        <div className="my-5 bg-slate-900 text-white py-2 px-4 rounded-lg flex items-center justify-between">
-          <h2 className="text-lg font-black tracking-wider uppercase">
-            {doc.doc_type === 'TAX_INVOICE' && 'TAX INVOICE'}
-            {doc.doc_type === 'LABOUR_BILL' && 'TAX INVOICE - LABOUR & SERVICES BILL'}
-            {doc.doc_type === 'QUOTATION' && 'QUOTATION / PRICE ESTIMATE'}
-          </h2>
-          <span className="text-xs font-mono font-semibold bg-slate-800 px-3 py-1 rounded">
-            {doc.doc_type === 'TAX_INVOICE' && `INVOICE #: ${doc.doc_number}`}
-            {doc.doc_type === 'LABOUR_BILL' && `LABOUR BILL #: ${doc.doc_number}`}
-            {doc.doc_type === 'QUOTATION' && `QUOTATION #: ${doc.doc_number}`}
-          </span>
-        </div>
-
-        {/* Billed To & Document Details Box */}
-        <div className="grid grid-cols-2 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-xs">
-          <div>
-            <h3 className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">
-              BILLED TO / CUSTOMER:
-            </h3>
-            <h4 className="text-sm font-bold text-slate-900">{doc.customer_name}</h4>
-            {doc.customer_gstin && (
-              <p className="font-mono font-bold text-slate-700 mt-0.5">
-                GSTIN: <span className="text-slate-900">{doc.customer_gstin}</span>
-              </p>
-            )}
-            <p className="text-slate-600 mt-1 whitespace-pre-line">{doc.customer_address}</p>
-            {doc.customer_phone && <p className="text-slate-600 mt-0.5">Ph: {doc.customer_phone}</p>}
-          </div>
-
-          <div className="space-y-1.5 text-right font-medium">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Date:</span>
-              <span className="font-bold font-mono">{doc.doc_date}</span>
-            </div>
-            {doc.valid_till_date && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">
-                  {doc.doc_type === 'QUOTATION' ? 'Valid Till:' : 'Due Date:'}
-                </span>
-                <span className="font-bold font-mono">{doc.valid_till_date}</span>
+        {/* Customer & Document Info Red Bordered Grid */}
+        <div className="border-2 border-red-700 rounded text-xs mb-3">
+          <div className="grid grid-cols-12 divide-x-2 divide-red-700">
+            {/* Customer Details Box */}
+            <div className="col-span-8 p-2.5 space-y-1">
+              <div className="flex items-start">
+                <span className="font-bold text-red-800 w-24 flex-shrink-0">Name :</span>
+                <span className="font-bold text-slate-900">{doc.customer_name}</span>
               </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-slate-500">Tax Scheme:</span>
-              <span className="font-bold">{doc.is_igst ? 'IGST (Inter-state)' : 'CGST + SGST (Intra-state)'}</span>
+              <div className="flex items-start">
+                <span className="font-bold text-red-800 w-24 flex-shrink-0">Add. :</span>
+                <span className="text-slate-800 whitespace-pre-line">{doc.customer_address}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-bold text-red-800 w-24 flex-shrink-0">PARTY GST :</span>
+                <span className="font-mono font-bold text-slate-900">{doc.customer_gstin || '-'}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-bold text-red-800 w-24 flex-shrink-0">Mo. :</span>
+                <span className="font-mono text-slate-900">{doc.customer_phone || '-'}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Status:</span>
-              <span className="font-bold uppercase text-slate-900">{doc.status}</span>
+
+            {/* Document Reference Box */}
+            <div className="col-span-4 p-2.5 space-y-1 divide-y divide-red-200">
+              <div className="flex justify-between items-center pb-1">
+                <span className="font-bold text-red-800">Date :</span>
+                <span className="font-mono font-bold text-slate-900">{doc.doc_date}</span>
+              </div>
+              <div className="flex justify-between items-center pt-1 pb-1">
+                <span className="font-bold text-red-800">Invoice No. :</span>
+                <span className="font-mono font-bold text-slate-900">{doc.doc_number}</span>
+              </div>
+              <div className="flex justify-between items-center pt-1 pb-1">
+                <span className="font-bold text-red-800">Challan No. :</span>
+                <span className="font-mono text-slate-800">-</span>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className="font-bold text-red-800">P.O. No. :</span>
+                <span className="font-mono text-slate-800">-</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Line Items Table */}
-        <div className="border border-slate-300 rounded-xl overflow-hidden mb-6">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900 text-white font-bold uppercase text-[10px]">
+        {/* Line Items Table with Red Borders */}
+        <div className="border-2 border-red-700 rounded overflow-hidden mb-3">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-red-50 text-red-900 font-bold uppercase text-[11px] border-b-2 border-red-700">
               <tr>
-                <th className="py-2.5 px-3 w-8 border-r border-slate-700">#</th>
-                <th className="py-2.5 px-3 border-r border-slate-700">
-                  {doc.doc_type === 'LABOUR_BILL' ? 'Description of Labour Work / Repair Service' : 'Description of Goods / Services'}
-                </th>
-                <th className="py-2.5 px-3 w-20 border-r border-slate-700 text-center">HSN/SAC</th>
-                <th className="py-2.5 px-3 w-16 border-r border-slate-700 text-center">Qty</th>
-                <th className="py-2.5 px-3 w-16 border-r border-slate-700 text-center">Unit</th>
-                <th className="py-2.5 px-3 w-24 border-r border-slate-700 text-right">Rate (₹)</th>
-                <th className="py-2.5 px-3 w-24 border-r border-slate-700 text-right">Taxable (₹)</th>
-                <th className="py-2.5 px-3 w-14 border-r border-slate-700 text-center">GST</th>
-                <th className="py-2.5 px-3 w-24 text-right">Total (₹)</th>
+                <th className="py-2 px-2.5 w-10 text-center border-r-2 border-red-700">No.</th>
+                <th className="py-2 px-3 border-r-2 border-red-700">Description of Goods / Services</th>
+                <th className="py-2 px-2.5 w-20 text-center border-r-2 border-red-700">HSN Code</th>
+                <th className="py-2 px-2.5 w-24 text-center border-r-2 border-red-700">Quantity</th>
+                <th className="py-2 px-2.5 w-24 text-right border-r-2 border-red-700">Rate</th>
+                <th className="py-2 px-3 w-28 text-right">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-red-200">
               {doc.items && doc.items.map((it, idx) => (
-                <tr key={idx} className={idx % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
-                  <td className="py-3 px-3 border-r border-slate-200 text-center font-semibold">{idx + 1}</td>
-                  <td className="py-3 px-3 border-r border-slate-200 font-semibold text-slate-900 whitespace-pre-line">
+                <tr key={idx} className="hover:bg-red-50/20">
+                  <td className="py-2.5 px-2.5 text-center font-bold text-red-800 border-r-2 border-red-700">{idx + 1}</td>
+                  <td className="py-2.5 px-3 border-r-2 border-red-700 font-semibold text-slate-900 whitespace-pre-line">
                     {it.description}
                   </td>
-                  <td className="py-3 px-3 border-r border-slate-200 text-center font-mono font-medium text-slate-600">
+                  <td className="py-2.5 px-2.5 border-r-2 border-red-700 text-center font-mono text-slate-700">
                     {it.hsn_sac || '-'}
                   </td>
-                  <td className="py-3 px-3 border-r border-slate-200 text-center font-bold text-slate-900">{it.qty}</td>
-                  <td className="py-3 px-3 border-r border-slate-200 text-center text-slate-600">{it.unit}</td>
-                  <td className="py-3 px-3 border-r border-slate-200 text-right font-mono">{it.rate.toFixed(2)}</td>
-                  <td className="py-3 px-3 border-r border-slate-200 text-right font-mono font-semibold">{it.taxable_amount.toFixed(2)}</td>
-                  <td className="py-3 px-3 border-r border-slate-200 text-center font-bold">{it.gst_rate}%</td>
-                  <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">{it.total_amount.toFixed(2)}</td>
+                  <td className="py-2.5 px-2.5 border-r-2 border-red-700 text-center font-bold text-slate-900">
+                    {it.qty} {it.unit}
+                  </td>
+                  <td className="py-2.5 px-2.5 border-r-2 border-red-700 text-right font-mono">
+                    {it.rate.toFixed(2)}/-
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                    {it.taxable_amount.toFixed(2)}/-
+                  </td>
+                </tr>
+              ))}
+              {/* Padding rows to maintain classic bill book height */}
+              {Array.from({ length: Math.max(0, 4 - (doc.items?.length || 0)) }).map((_, i) => (
+                <tr key={`empty-${i}`}>
+                  <td className="py-3 border-r-2 border-red-700">&nbsp;</td>
+                  <td className="py-3 border-r-2 border-red-700">&nbsp;</td>
+                  <td className="py-3 border-r-2 border-red-700">&nbsp;</td>
+                  <td className="py-3 border-r-2 border-red-700">&nbsp;</td>
+                  <td className="py-3 border-r-2 border-red-700">&nbsp;</td>
+                  <td className="py-3">&nbsp;</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Calculation Summary & Amount in Words */}
-        <div className="grid grid-cols-12 gap-6 mb-6">
-          <div className="col-span-7 space-y-4 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">AMOUNT IN WORDS</span>
-              <p className="font-bold text-slate-900 italic mt-0.5">{numToWords(doc.total_amount)}</p>
+        {/* Totals & Tax Table */}
+        <div className="grid grid-cols-12 gap-3 mb-3 text-xs">
+          <div className="col-span-7 flex flex-col justify-between space-y-2">
+            <div className="p-2.5 border-2 border-red-700 rounded bg-red-50/30">
+              <span className="font-bold text-red-800 text-[11px] block">Amount in Words :</span>
+              <span className="font-bold text-slate-900 italic">{numToWords(doc.total_amount)}</span>
             </div>
 
             {doc.notes && (
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">WORK / JOB NOTES</span>
-                <p className="text-slate-700 mt-0.5 whitespace-pre-line">{doc.notes}</p>
+              <div className="p-2 border border-red-300 rounded text-[11px]">
+                <span className="font-bold text-red-800 block">Work / Job Notes:</span>
+                <span className="text-slate-800 whitespace-pre-line">{doc.notes}</span>
               </div>
             )}
           </div>
 
-          <div className="col-span-5 text-xs border border-slate-300 rounded-xl overflow-hidden">
-            <div className="flex justify-between p-2.5 border-b border-slate-200 bg-slate-50">
-              <span className="font-semibold text-slate-600">Subtotal (Taxable):</span>
-              <span className="font-mono font-bold">{formatCurrency(doc.subtotal)}</span>
+          <div className="col-span-5 border-2 border-red-700 rounded divide-y divide-red-200">
+            <div className="flex justify-between p-2 font-bold text-slate-900">
+              <span className="text-red-800">Total :</span>
+              <span className="font-mono">{formatCurrency(doc.subtotal)}/-</span>
+            </div>
+
+            <div className="flex justify-between p-2 text-slate-700">
+              <span>Courier & Other Charges :</span>
+              <span className="font-mono">0.00/-</span>
             </div>
 
             {!doc.is_igst ? (
               <>
-                <div className="flex justify-between p-2.5 border-b border-slate-200">
-                  <span className="text-slate-600">CGST Amount:</span>
-                  <span className="font-mono font-semibold">{formatCurrency(doc.cgst_total)}</span>
+                <div className="flex justify-between p-2 text-slate-800">
+                  <span className="font-semibold text-red-800">SGST 9% :</span>
+                  <span className="font-mono font-semibold">{formatCurrency(doc.sgst_total)}/-</span>
                 </div>
-                <div className="flex justify-between p-2.5 border-b border-slate-200">
-                  <span className="text-slate-600">SGST Amount:</span>
-                  <span className="font-mono font-semibold">{formatCurrency(doc.sgst_total)}</span>
+                <div className="flex justify-between p-2 text-slate-800">
+                  <span className="font-semibold text-red-800">CGST 9% :</span>
+                  <span className="font-mono font-semibold">{formatCurrency(doc.cgst_total)}/-</span>
                 </div>
               </>
             ) : (
-              <div className="flex justify-between p-2.5 border-b border-slate-200">
-                <span className="text-slate-600">IGST Amount:</span>
-                <span className="font-mono font-semibold">{formatCurrency(doc.igst_total)}</span>
+              <div className="flex justify-between p-2 text-slate-800">
+                <span className="font-semibold text-red-800">IGST 18% :</span>
+                <span className="font-mono font-semibold">{formatCurrency(doc.igst_total)}/-</span>
               </div>
             )}
 
-            {doc.discount > 0 && (
-              <div className="flex justify-between p-2.5 border-b border-slate-200 text-rose-600 font-semibold">
-                <span>Discount:</span>
-                <span className="font-mono">- {formatCurrency(doc.discount)}</span>
+            <div className="flex justify-between p-2 bg-red-50 text-red-950 font-black text-sm border-t-2 border-red-700">
+              <span>TOTAL :</span>
+              <span className="font-mono text-base">{formatCurrency(doc.total_amount)}/-</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Terms & Authorized Signature */}
+        <div className="border-t-2 border-red-700 pt-3 text-[10px]">
+          <div className="grid grid-cols-12 items-end gap-2">
+            {/* Terms List */}
+            <div className="col-span-8 space-y-0.5 text-slate-800 font-medium">
+              <span className="font-bold text-red-800 block text-xs">Terms:</span>
+              <p>1. Complain Any Should Be Issued Within A Week Time From The Date of Receipt of Goods,</p>
+              <p>2. Goods once Sold will not be Taken Back Or Exchange.</p>
+              <p>3. Subject to Ahmedabad Jurisdiction</p>
+              <p className="font-bold">E.&O.E.</p>
+            </div>
+
+            {/* Authorized Signature Box */}
+            <div className="col-span-4 text-right font-bold space-y-8">
+              <p className="text-slate-900">For : {company.name || 'DK ENTERPRISE'}</p>
+              <div className="text-center inline-block">
+                <div className="border-t-2 border-red-700 pt-1 px-4 text-red-900 text-xs uppercase font-extrabold">
+                  Autho Signature
+                </div>
               </div>
-            )}
-
-            <div className="flex justify-between p-3 bg-slate-900 text-white font-bold text-sm">
-              <span>Grand Total:</span>
-              <span className="font-mono text-base">{formatCurrency(doc.total_amount)}</span>
             </div>
           </div>
         </div>
 
-        {/* Bank Details & Terms Footer */}
-        <div className="grid grid-cols-2 gap-6 border-t-2 border-slate-900 pt-5 text-xs">
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5 uppercase tracking-wider mb-2">
-              <Landmark className="w-4 h-4 text-sky-600" /> Bank Payment Details
-            </h4>
-            <div className="space-y-1 font-mono text-[11px] text-slate-700">
-              <p><span className="text-slate-500">Bank Name:</span> <strong>{company.bank_name || 'KOTAK MAHINDRA BANK'}</strong></p>
-              <p><span className="text-slate-500">Account No:</span> <strong>{company.account_no || '5448285750'}</strong></p>
-              <p><span className="text-slate-500">IFSC Code:</span> <strong>{company.ifsc_code || 'KKBK0000159'}</strong></p>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Terms & Conditions</h4>
-            <p className="text-[10px] text-slate-600 whitespace-pre-line leading-relaxed">
-              {doc.terms || company.terms_conditions}
-            </p>
-          </div>
-        </div>
-
-        {/* Signature Box */}
-        <div className="flex items-end justify-between border-t border-slate-200 mt-8 pt-8 text-xs">
-          <div>
-            <p className="text-slate-500 text-[10px]">E. & O. E.</p>
-            <p className="text-slate-400 text-[10px]">Thank you for your business!</p>
-          </div>
-
-          <div className="text-center font-semibold">
-            <p className="text-slate-900 font-bold mb-12">For {company.name || 'DK Enterprise'}</p>
-            <div className="border-t border-slate-400 pt-1 px-8 text-slate-600 text-[11px]">
-              Authorized Signatory
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

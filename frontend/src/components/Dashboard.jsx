@@ -69,17 +69,20 @@ export default function Dashboard({ setActiveTab, onNewDocument, onViewDocument 
     <div className="space-y-6">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-sky-950 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-sky-600 text-white px-2.5 py-0.5 rounded-lg text-xs font-black">
-              DK ENTERPRISE
-            </span>
-            <span className="text-xs text-sky-300 font-semibold">Financial & Billing Overview</span>
+        <div className="flex items-center gap-4">
+          <img src="/dk_logo.png" alt="DK Enterprise Logo" className="h-12 w-auto object-contain drop-shadow" />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-sky-600 text-white px-2.5 py-0.5 rounded-lg text-xs font-black">
+                DK ENTERPRISE
+              </span>
+              <span className="text-xs text-sky-300 font-semibold">Financial & Billing Overview</span>
+            </div>
+            <h2 className="text-2xl font-black tracking-tight">Enterprise Billing Dashboard</h2>
+            <p className="text-slate-300 text-xs mt-1">
+              Track monthly/yearly earnings, tax invoices, labour bills, and official company letterheads.
+            </p>
           </div>
-          <h2 className="text-2xl font-black tracking-tight">Enterprise Billing Dashboard</h2>
-          <p className="text-slate-300 text-xs mt-1">
-            Track monthly/yearly earnings, tax invoices, labour bills, and official company letterheads.
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button

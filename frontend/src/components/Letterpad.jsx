@@ -330,9 +330,11 @@ export default function Letterpad() {
           ) : (
             <div className="flex items-start justify-between border-b-2 border-slate-900 pb-5 mb-6">
               <div className="flex items-start space-x-3">
-                <div className="bg-amber-500 text-slate-950 font-black text-2xl px-3.5 py-2 rounded-xl shadow-md">
-                  DK
-                </div>
+                <img 
+                  src="/dk_logo.png" 
+                  alt="DK Enterprise Logo" 
+                  className="h-12 w-auto object-contain"
+                />
                 <div>
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
                     {company.name || 'DK Enterprise'}
