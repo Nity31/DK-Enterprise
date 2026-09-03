@@ -6,6 +6,11 @@
   "scripts": {
     "install-deps": "npm install --prefix backend && npm install --prefix frontend --include=dev",
     "build": "npm run install-deps && npm run build --prefix frontend",
-    "start": "node backend/src/server.js"
+    "start": "cd backend && node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.7"
   }
 }
