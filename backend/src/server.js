@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { dbQuery } = require('./db');
 
 const app = express();
@@ -13,6 +14,10 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// Serve frontend production build statically
+const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDistPath));
 
 // -------------------------------------------------------------
 // 1. COMPANY PROFILE ROUTES
@@ -191,7 +196,6 @@ app.post('/api/documents', async (req, res) => {
       return res.status(400).json({ error: 'Missing required document fields or line items' });
     }
 
-    // Calculate totals
     let subtotal = 0;
     let cgst_total = 0;
     let sgst_total = 0;
@@ -242,7 +246,6 @@ app.post('/api/documents', async (req, res) => {
 
     const docId = docResult.lastID;
 
-    // Insert items
     for (const it of processedItems) {
       await dbQuery.run(`
         INSERT INTO document_items (doc_id, description, hsn_sac, qty, unit, rate, gst_rate, taxable_amount, total_amount)
@@ -314,7 +317,6 @@ app.put('/api/documents/:id', async (req, res) => {
       disc, grandTotal, notes || '', terms || '', docId
     ]);
 
-    // Delete old items and insert updated ones
     await dbQuery.run('DELETE FROM document_items WHERE doc_id = ?', [docId]);
     for (const it of processedItems) {
       await dbQuery.run(`
@@ -391,7 +393,177 @@ app.delete('/api/documents/:id', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 4. COMPANY LETTERS & LETTERHEAD MODULE ROUTES
+// 4. E-WAY BILLS API ROUTES
+// -------------------------------------------------------------
+app.get('/api/eway-bills/next-number', async (req, res) => {
+  try {
+    const year = new Date().getFullYear();
+    const prefix = `EWB-${year}`;
+    const lastEwb = await dbQuery.get(
+      `SELECT eway_bill_number FROM eway_bills WHERE eway_bill_number LIKE ? ORDER BY id DESC LIMIT 1`,
+      [`${prefix}-%`]
+    );
+    let seq = 1001;
+    if (lastEwb && lastEwb.eway_bill_number) {
+      const parts = lastEwb.eway_bill_number.split('-');
+      if (parts.length === 3) {
+        seq = parseInt(parts[2], 10) + 1;
+      }
+    }
+    res.json({ eway_bill_number: `${prefix}-${seq}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/eway-bills', async (req, res) => {
+  try {
+    const sql = `
+      SELECT eb.*, c.name as customer_name, c.gstin as customer_gstin
+      FROM eway_bills eb
+      JOIN documents d ON eb.doc_id = d.id
+      JOIN customers c ON d.customer_id = c.id
+      ORDER BY eb.id DESC
+    `;
+    const list = await dbQuery.all(sql);
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/eway-bills/:id', async (req, res) => {
+  try {
+    const ewb = await dbQuery.get(`
+      SELECT eb.*, d.doc_number, d.doc_date, d.doc_type as original_doc_type, d.subtotal, d.cgst_total, d.sgst_total, d.igst_total, d.total_amount, d.is_igst,
+             c.name as customer_name, c.gstin as customer_gstin, c.address as customer_address, c.phone as customer_phone
+      FROM eway_bills eb
+      JOIN documents d ON eb.doc_id = d.id
+      JOIN customers c ON d.customer_id = c.id
+      WHERE eb.id = ?
+    `, [req.params.id]);
+
+    if (!ewb) return res.status(404).json({ error: 'E-Way Bill not found' });
+
+    const items = await dbQuery.all('SELECT * FROM document_items WHERE doc_id = ?', [ewb.doc_id]);
+    const company = await dbQuery.get('SELECT * FROM company_info WHERE id = 1');
+
+    res.json({ ...ewb, items, company });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/eway-bills', async (req, res) => {
+  try {
+    const {
+      eway_bill_number, doc_id, supply_type, sub_supply_type, doc_type, doc_number, doc_date,
+      transporter_id, transporter_name, transport_mode, distance_km, vehicle_number, vehicle_type,
+      lr_rr_number, lr_rr_date, from_pincode, to_pincode, total_value
+    } = req.body;
+
+    if (!eway_bill_number || !doc_id || !vehicle_number) {
+      return res.status(400).json({ error: 'E-Way Bill number, Invoice ID, and Vehicle Number are required' });
+    }
+
+    const result = await dbQuery.run(`
+      INSERT INTO eway_bills (
+        eway_bill_number, doc_id, supply_type, sub_supply_type, doc_type, doc_number, doc_date,
+        transporter_id, transporter_name, transport_mode, distance_km, vehicle_number, vehicle_type,
+        lr_rr_number, lr_rr_date, from_pincode, to_pincode, total_value, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Generated')
+    `, [
+      eway_bill_number, doc_id, supply_type || 'Outward', sub_supply_type || 'Supply',
+      doc_type || 'Tax Invoice', doc_number, doc_date,
+      transporter_id || '', transporter_name || '', transport_mode || 'Road',
+      parseInt(distance_km, 10) || 0, vehicle_number, vehicle_type || 'Regular',
+      lr_rr_number || '', lr_rr_date || null, from_pincode || '', to_pincode || '',
+      parseFloat(total_value) || 0
+    ]);
+
+    res.status(201).json({ id: result.lastID, eway_bill_number });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// JSON Export for GST E-Way Bill Portal Bulk Upload
+app.get('/api/eway-bills/:id/json', async (req, res) => {
+  try {
+    const ewb = await dbQuery.get(`
+      SELECT eb.*, d.doc_number, d.doc_date, d.subtotal, d.cgst_total, d.sgst_total, d.igst_total, d.total_amount, d.is_igst,
+             c.name as customer_name, c.gstin as customer_gstin, c.address as customer_address
+      FROM eway_bills eb
+      JOIN documents d ON eb.doc_id = d.id
+      JOIN customers c ON d.customer_id = c.id
+      WHERE eb.id = ?
+    `, [req.params.id]);
+
+    if (!ewb) return res.status(404).json({ error: 'E-Way Bill not found' });
+    const company = await dbQuery.get('SELECT * FROM company_info WHERE id = 1');
+    const items = await dbQuery.all('SELECT * FROM document_items WHERE doc_id = ?', [ewb.doc_id]);
+
+    // GST Portal E-Way Bill JSON Format
+    const gstEwayJson = {
+      version: "1.0.0221",
+      billLists: [{
+        userGstin: company.gstin,
+        supplyType: ewb.supply_type === 'Outward' ? 'O' : 'I',
+        subSupplyType: "1",
+        docType: "INV",
+        docNo: ewb.doc_number,
+        docDate: ewb.doc_date.split('-').reverse().join('/'),
+        fromGstin: company.gstin,
+        fromTrdName: company.name,
+        fromAddr1: company.address,
+        fromPincode: parseInt(ewb.from_pincode) || 382330,
+        toGstin: ewb.customer_gstin || 'URP',
+        toTrdName: ewb.customer_name,
+        toAddr1: ewb.customer_address,
+        toPincode: parseInt(ewb.to_pincode) || 380001,
+        totalValue: ewb.subtotal,
+        cgstValue: ewb.cgst_total,
+        sgstValue: ewb.sgst_total,
+        igstValue: ewb.igst_total,
+        totInvValue: ewb.total_amount,
+        transporterId: ewb.transporter_id,
+        transporterName: ewb.transporter_name,
+        transMode: "1", // 1 for Road
+        transDistance: ewb.distance_km,
+        vehicleNo: ewb.vehicle_number,
+        vehicleType: "R",
+        itemList: items.map(it => ({
+          productName: it.description,
+          hsnCode: parseInt(it.hsn_sac) || 84122100,
+          quantity: it.qty,
+          qtyUnit: it.unit,
+          taxableAmount: it.taxable_amount,
+          cgstRate: ewb.is_igst ? 0 : it.gst_rate / 2,
+          sgstRate: ewb.is_igst ? 0 : it.gst_rate / 2,
+          igstRate: ewb.is_igst ? it.gst_rate : 0
+        }))
+      }]
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=EWayBill_${ewb.eway_bill_number}.json`);
+    res.send(JSON.stringify(gstEwayJson, null, 2));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/eway-bills/:id', async (req, res) => {
+  try {
+    await dbQuery.run('DELETE FROM eway_bills WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// 5. COMPANY LETTERS MODULE ROUTES
 // -------------------------------------------------------------
 app.get('/api/letters/next-number', async (req, res) => {
   try {
@@ -475,43 +647,26 @@ app.delete('/api/letters/:id', async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 5. ENHANCED DASHBOARD STATS (MONTHLY & YEARLY EARNINGS)
+// 6. DASHBOARD STATS
 // -------------------------------------------------------------
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
     const currentYear = new Date().getFullYear().toString();
     const currentMonth = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
-    // All-time Total Paid Revenue
     const revenueRow = await dbQuery.get("SELECT SUM(total_amount) as total FROM documents WHERE doc_type IN ('TAX_INVOICE', 'LABOUR_BILL') AND status = 'Paid'");
-    
-    // Monthly Earnings (Current Month)
     const monthRow = await dbQuery.get(
       "SELECT SUM(total_amount) as total FROM documents WHERE doc_type IN ('TAX_INVOICE', 'LABOUR_BILL') AND status = 'Paid' AND strftime('%Y-%m', doc_date) = ?",
       [currentMonth]
     );
-
-    // Yearly Earnings (Current Year)
     const yearRow = await dbQuery.get(
       "SELECT SUM(total_amount) as total FROM documents WHERE doc_type IN ('TAX_INVOICE', 'LABOUR_BILL') AND status = 'Paid' AND strftime('%Y', doc_date) = ?",
       [currentYear]
     );
 
-    // Pending Receivables
     const unpaidRow = await dbQuery.get("SELECT SUM(total_amount) as total, COUNT(*) as count FROM documents WHERE doc_type IN ('TAX_INVOICE', 'LABOUR_BILL') AND status = 'Unpaid'");
-    
-    // Counts
     const quotationCountRow = await dbQuery.get("SELECT COUNT(*) as count FROM documents WHERE doc_type = 'QUOTATION'");
     const customerCountRow = await dbQuery.get("SELECT COUNT(*) as count FROM customers");
-
-    // Monthly breakdown for current year
-    const monthlyBreakdown = await dbQuery.all(`
-      SELECT strftime('%m', doc_date) as month_num, SUM(total_amount) as total
-      FROM documents
-      WHERE doc_type IN ('TAX_INVOICE', 'LABOUR_BILL') AND status = 'Paid' AND strftime('%Y', doc_date) = ?
-      GROUP BY month_num
-      ORDER BY month_num ASC
-    `, [currentYear]);
 
     const recentDocs = await dbQuery.all(`
       SELECT d.*, c.name as customer_name
@@ -528,7 +683,6 @@ app.get('/api/dashboard/stats', async (req, res) => {
       unpaidCount: unpaidRow ? unpaidRow.count || 0 : 0,
       totalQuotations: quotationCountRow ? quotationCountRow.count || 0 : 0,
       totalCustomers: customerCountRow ? customerCountRow.count || 0 : 0,
-      monthlyBreakdown,
       recentDocs
     });
   } catch (err) {
@@ -536,7 +690,13 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+// Fallback for single page application routing
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
+
 // Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 DK Enterprise Billing Backend Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 DK Enterprise Billing Server running on http://0.0.0.0:${PORT}`);
 });

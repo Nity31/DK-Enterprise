@@ -1,11 +1,21 @@
 @echo off
-echo Starting Hydraulic Machinery Billing System...
-echo ==============================================
+setlocal enabledelayedexpansion
 
-start "Hydraulic Billing Backend" cmd /k "cd /d %~dp0backend && npm start"
-timeout /t 2 >nul
-start "Hydraulic Billing Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
-timeout /t 3 >nul
+:: Check if port 5000 is already active
+netstat -o -n -a | findstr ":5000 " >nul 2>&1
+if %ERRORLEVEL% == 0 (
+    :: Port 5000 is already running! Simply open browser quietly without duplicate server launch
+    start http://localhost:5000
+    exit /b 0
+)
 
-echo Opening browser at http://localhost:5173
-start http://localhost:5173
+:: Otherwise start the backend server quietly
+cd /d "%~dp0backend"
+start /b node src/server.js >nul 2>&1
+
+:: Wait 2 seconds for server boot
+timeout /t 2 /nobreak >nul
+
+:: Open browser
+start http://localhost:5000
+exit /b 0

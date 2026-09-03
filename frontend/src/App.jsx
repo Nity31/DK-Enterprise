@@ -5,12 +5,16 @@ import DocumentList from './components/DocumentList';
 import DocumentForm from './components/DocumentForm';
 import DocumentPrint from './components/DocumentPrint';
 import Letterpad from './components/Letterpad';
+import EWayBillManager from './components/EWayBillManager';
+import EWayBillPrint from './components/EWayBillPrint';
 import CustomerManager from './components/CustomerManager';
 import CompanySettings from './components/CompanySettings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedDocId, setSelectedDocId] = useState(null);
+  const [selectedEwbId, setSelectedEwbId] = useState(null);
+  const [preselectDocIdForEwb, setPreselectDocIdForEwb] = useState('');
   const [formType, setFormType] = useState('TAX_INVOICE');
 
   const handleNewDocument = (type = 'TAX_INVOICE') => {
@@ -36,6 +40,16 @@ export default function App() {
   const handleConverted = (newDocId) => {
     setSelectedDocId(newDocId);
     setActiveTab('document-print');
+  };
+
+  const handleViewEWayBill = (ewbId) => {
+    setSelectedEwbId(ewbId);
+    setActiveTab('eway-bill-print');
+  };
+
+  const handleCreateEWayBillFromDoc = (docId) => {
+    setPreselectDocIdForEwb(docId);
+    setActiveTab('eway-bills');
   };
 
   return (
@@ -80,6 +94,21 @@ export default function App() {
             onBack={() => setActiveTab('documents')}
             onEdit={handleEditDocument}
             onConverted={handleConverted}
+            onCreateEWayBill={handleCreateEWayBillFromDoc}
+          />
+        )}
+
+        {activeTab === 'eway-bills' && (
+          <EWayBillManager
+            onViewEWayBill={handleViewEWayBill}
+            onNewEWayBillForDocId={preselectDocIdForEwb}
+          />
+        )}
+
+        {activeTab === 'eway-bill-print' && (
+          <EWayBillPrint
+            ewbId={selectedEwbId}
+            onBack={() => setActiveTab('eway-bills')}
           />
         )}
 
@@ -93,7 +122,7 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 no-print text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 font-semibold">
-          DK Enterprise - Hydraulic Machinery Billing & Letterpad System &copy; {new Date().getFullYear()}
+          DK Enterprise - Billing, E-Way Bill & Letterpad System &copy; {new Date().getFullYear()}
         </div>
       </footer>
     </div>

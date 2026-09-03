@@ -9,10 +9,10 @@ import {
   Landmark, 
   Wrench,
   FileText,
-  Sliders
+  Sliders,
+  Truck
 } from 'lucide-react';
 
-// Number to Words in Indian Rupees
 function numToWords(num) {
   if (!num) return 'Zero Rupees Only';
   const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
@@ -36,13 +36,12 @@ function numToWords(num) {
   return `Rupees ${words.trim()} Only`;
 }
 
-export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
+export default function DocumentPrint({ docId, onBack, onEdit, onConverted, onCreateEWayBill }) {
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Letterhead Print Settings
   const [useLetterheadMode, setUseLetterheadMode] = useState(false);
-  const [headerMarginTop, setHeaderMarginTop] = useState(180); // in pixels
+  const [headerMarginTop, setHeaderMarginTop] = useState(180);
 
   useEffect(() => {
     fetchDocDetails();
@@ -111,7 +110,16 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
             <ArrowLeft className="w-4 h-4" /> Back to List
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {doc.doc_type !== 'QUOTATION' && (
+              <button
+                onClick={() => onCreateEWayBill(doc.id)}
+                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Truck className="w-4 h-4" /> Create E-Way Bill
+              </button>
+            )}
+
             {doc.doc_type === 'QUOTATION' && doc.status !== 'Converted' && (
               <button
                 onClick={handleConvert}
@@ -137,7 +145,7 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
           </div>
         </div>
 
-        {/* Letterhead Print Options Switcher */}
+        {/* Letterhead Switcher */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 text-xs">
           <div className="flex items-center gap-3">
             <span className="font-bold text-sky-400 flex items-center gap-1">
@@ -163,7 +171,6 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
             </div>
           </div>
 
-          {/* Top Margin Adjustment Slider when Letter Pad Mode is Active */}
           {useLetterheadMode && (
             <div className="flex items-center gap-3 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">
               <Sliders className="w-4 h-4 text-amber-400" />
@@ -186,7 +193,6 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
       {/* Printable Sheet (A4 format) */}
       <div className="print-area bg-white p-8 rounded-2xl border border-slate-300 shadow-xl max-w-4xl mx-auto text-slate-900 font-sans">
         
-        {/* IF LETTERHEAD MODE: Blank Space Header for Pre-Printed Letter Pad */}
         {useLetterheadMode ? (
           <div 
             style={{ height: `${headerMarginTop}px` }} 
@@ -197,18 +203,17 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
             </span>
           </div>
         ) : (
-          /* DIGITAL COMPANY HEADER (For Plain Paper Print) */
           <div className="flex items-start justify-between border-b-2 border-slate-900 pb-5">
             <div className="flex items-start space-x-3">
-              <div className="bg-slate-900 text-white p-3 rounded-xl">
-                <Wrench className="w-8 h-8" />
+              <div className="bg-gradient-to-br from-sky-500 to-blue-700 text-white px-3.5 py-2 rounded-xl font-black text-2xl tracking-tight shadow-md">
+                DK
               </div>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-                  {company.name || 'Apex Hydraulic Solutions'}
+                  {company.name || 'DK Enterprise'}
                 </h1>
                 <p className="text-xs font-medium text-slate-600 mt-0.5">
-                  {company.tagline || 'Manufacturers & Repairers of Hydraulic Machinery'}
+                  {company.tagline || 'Hydraulic Machinery, Spare Parts & Servicing Specialists'}
                 </p>
                 <p className="text-xs text-slate-600 mt-1 max-w-md">
                   {company.address}
@@ -244,7 +249,6 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
 
         {/* Billed To & Document Details Box */}
         <div className="grid grid-cols-2 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-xs">
-          {/* Customer Info */}
           <div>
             <h3 className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">
               BILLED TO / CUSTOMER:
@@ -259,7 +263,6 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
             {doc.customer_phone && <p className="text-slate-600 mt-0.5">Ph: {doc.customer_phone}</p>}
           </div>
 
-          {/* Document Meta */}
           <div className="space-y-1.5 text-right font-medium">
             <div className="flex justify-between">
               <span className="text-slate-500">Date:</span>
@@ -291,7 +294,7 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
               <tr>
                 <th className="py-2.5 px-3 w-8 border-r border-slate-700">#</th>
                 <th className="py-2.5 px-3 border-r border-slate-700">
-                  {doc.doc_type === 'LABOUR_BILL' ? 'Description of Labour Work / Repair Service' : 'Description of Goods / Hydraulic Services'}
+                  {doc.doc_type === 'LABOUR_BILL' ? 'Description of Labour Work / Repair Service' : 'Description of Goods / Services'}
                 </th>
                 <th className="py-2.5 px-3 w-20 border-r border-slate-700 text-center">HSN/SAC</th>
                 <th className="py-2.5 px-3 w-16 border-r border-slate-700 text-center">Qty</th>
@@ -326,7 +329,6 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
 
         {/* Calculation Summary & Amount in Words */}
         <div className="grid grid-cols-12 gap-6 mb-6">
-          {/* Left Side: Amount in Words & Notes */}
           <div className="col-span-7 space-y-4 text-xs">
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">AMOUNT IN WORDS</span>
@@ -341,7 +343,6 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
             )}
           </div>
 
-          {/* Right Side: Totals Table */}
           <div className="col-span-5 text-xs border border-slate-300 rounded-xl overflow-hidden">
             <div className="flex justify-between p-2.5 border-b border-slate-200 bg-slate-50">
               <span className="font-semibold text-slate-600">Subtotal (Taxable):</span>
@@ -382,24 +383,21 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
 
         {/* Bank Details & Terms Footer */}
         <div className="grid grid-cols-2 gap-6 border-t-2 border-slate-900 pt-5 text-xs">
-          {/* Bank Payment Details */}
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
             <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5 uppercase tracking-wider mb-2">
               <Landmark className="w-4 h-4 text-sky-600" /> Bank Payment Details
             </h4>
             <div className="space-y-1 font-mono text-[11px] text-slate-700">
-              <p><span className="text-slate-500">Bank Name:</span> <strong>{company.bank_name || 'State Bank of India'}</strong></p>
-              <p><span className="text-slate-500">Account No:</span> <strong>{company.account_no || '39876543210'}</strong></p>
-              <p><span className="text-slate-500">IFSC Code:</span> <strong>{company.ifsc_code || 'SBIN0001234'}</strong></p>
-              {company.upi_id && <p><span className="text-slate-500">UPI ID:</span> <strong>{company.upi_id}</strong></p>}
+              <p><span className="text-slate-500">Bank Name:</span> <strong>{company.bank_name || 'KOTAK MAHINDRA BANK'}</strong></p>
+              <p><span className="text-slate-500">Account No:</span> <strong>{company.account_no || '5448285750'}</strong></p>
+              <p><span className="text-slate-500">IFSC Code:</span> <strong>{company.ifsc_code || 'KKBK0000159'}</strong></p>
             </div>
           </div>
 
-          {/* Terms & Conditions */}
           <div>
             <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Terms & Conditions</h4>
             <p className="text-[10px] text-slate-600 whitespace-pre-line leading-relaxed">
-              {doc.terms || company.terms_conditions || '1. Goods once sold will not be taken back.\n2. Warranty covers manufacturing defects.'}
+              {doc.terms || company.terms_conditions}
             </p>
           </div>
         </div>
@@ -412,7 +410,7 @@ export default function DocumentPrint({ docId, onBack, onEdit, onConverted }) {
           </div>
 
           <div className="text-center font-semibold">
-            <p className="text-slate-900 font-bold mb-12">For {company.name || 'Apex Hydraulic Solutions'}</p>
+            <p className="text-slate-900 font-bold mb-12">For {company.name || 'DK Enterprise'}</p>
             <div className="border-t border-slate-400 pt-1 px-8 text-slate-600 text-[11px]">
               Authorized Signatory
             </div>

@@ -102,6 +102,34 @@ function initTables() {
         signatory_name TEXT DEFAULT 'Authorized Signatory',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // E-Way Bills Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS eway_bills (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        eway_bill_number TEXT UNIQUE NOT NULL,
+        doc_id INTEGER NOT NULL,
+        supply_type TEXT DEFAULT 'Outward',
+        sub_supply_type TEXT DEFAULT 'Supply',
+        doc_type TEXT NOT NULL,
+        doc_number TEXT NOT NULL,
+        doc_date DATE NOT NULL,
+        transporter_id TEXT,
+        transporter_name TEXT,
+        transport_mode TEXT DEFAULT 'Road',
+        distance_km INTEGER DEFAULT 0,
+        vehicle_number TEXT,
+        vehicle_type TEXT DEFAULT 'Regular',
+        lr_rr_number TEXT,
+        lr_rr_date DATE,
+        from_pincode TEXT,
+        to_pincode TEXT,
+        total_value REAL DEFAULT 0,
+        status TEXT DEFAULT 'Generated',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE
+      );
     `, (err) => {
       if (!err) {
         seedInitialData();
@@ -120,25 +148,22 @@ function seedInitialData() {
           1,
           'DK Enterprise',
           'Hydraulic Machinery, Spare Parts & Servicing Specialists',
-          '27AAACD9988E1Z4',
-          'Plot No. 12, Industrial Estate Phase I, MIDC, Mumbai - 400072',
-          '+91 98200 99887 / +91 98200 11223',
-          'contact@dkenterprise.in',
-          'HDFC Bank',
-          '50200012345678',
-          'HDFC0001234',
-          'dkenterprise@hdfcbank',
-          '1. Goods once sold will not be taken back.\n2. Warranty covers manufacturing defects for 6 months.\n3. Subject to local jurisdiction.\n4. Payment due within 15 days of invoice date.'
+          '24CWDPP5055P1Z0',
+          'C - 506 , Pratistha Sky , B/H Ashirwad Avenue ,\nOpp , shalby Hospital , Hari Darshan Cross Road ,\nNava Naorda Ahmedabad - 382330',
+          '9925802443',
+          'patel.kv75@gmail.com',
+          'KOTAK MAHINDRA BANK',
+          '5448285750',
+          'KKBK0000159',
+          '',
+          '1. PAYMENT TERMS - 60% ADVANCE , 40% AGAINST DELIVERY\n2. GST TAX EXTRA 18%\n3. TRANSPORTATION TAX EXTRA\n4. DELIVERY TIME 20-25 WORKING DAYS FROM THE DAY ADVANCE IS RECEIVED\n5. QUOTATION VALUE 15 DAYS'
         );
       `);
       console.log('Seeded DK Enterprise company profile');
-    } else {
-      // Update company name to DK Enterprise if needed
-      db.run("UPDATE company_info SET name = 'DK Enterprise', tagline = 'Hydraulic Machinery, Spare Parts & Servicing Specialists' WHERE id = 1 AND name != 'DK Enterprise'");
     }
   });
 
-  // Seed sample letters if empty
+  // Check sample letters
   db.get("SELECT COUNT(*) AS count FROM letters", (err, row) => {
     if (row && row.count === 0) {
       const today = new Date().toISOString().split('T')[0];
@@ -203,9 +228,22 @@ function seedInitialData() {
             (${docId}, 'Hydraulic Power Pack Unit Overhauling & Servicing', '998719', 1, 'Job', 12000, 18, 12000, 14160),
             (${docId}, 'Hard Chrome Plated Piston Rod Repair & Grinding', '998719', 1, 'Job', 4500, 18, 4500, 5310);
           `);
+
+          // Seed sample E-Way Bill for INV-2026-001
+          db.run(`
+            INSERT INTO eway_bills (
+              eway_bill_number, doc_id, supply_type, sub_supply_type, doc_type, doc_number, doc_date,
+              transporter_id, transporter_name, transport_mode, distance_km, vehicle_number, vehicle_type,
+              lr_rr_number, lr_rr_date, from_pincode, to_pincode, total_value, status
+            ) VALUES (
+              'EWB-2026-1001', ${docId}, 'Outward', 'Supply', 'Tax Invoice', 'INV-2026-001', '${today}',
+              '27AAACT1234T1Z2', 'VRL Logistics Ltd', 'Road', 150, 'GJ-01-XX-9988', 'Regular',
+              'LR-987123', '${today}', '382330', '411019', 18970, 'Generated'
+            );
+          `);
         }
       });
-      console.log('Seeded sample quotation and tax invoice');
+      console.log('Seeded sample quotation, tax invoice, and e-way bill');
     }
   });
 }

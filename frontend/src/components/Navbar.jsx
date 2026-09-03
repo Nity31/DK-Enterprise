@@ -7,7 +7,8 @@ import {
   LayoutDashboard,
   Building2,
   Hammer,
-  FileSignature
+  FileSignature,
+  Truck
 } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
@@ -17,7 +18,6 @@ export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
         <div className="flex items-center justify-between h-16">
           {/* Logo & Branding */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-            {/* Sleek Modern Logo Emblem */}
             <div className="bg-gradient-to-br from-sky-500 to-blue-700 text-white px-3 py-1.5 rounded-xl font-black text-xl tracking-tight shadow-md ring-1 ring-white/20 flex items-center justify-center">
               DK
             </div>
@@ -32,51 +32,61 @@ export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
           <nav className="hidden md:flex space-x-1">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${
                 activeTab === 'dashboard' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 mr-2" />
+              <LayoutDashboard className="w-4 h-4 mr-1.5" />
               Dashboard
             </button>
 
             <button
               onClick={() => setActiveTab('documents')}
-              className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${
                 activeTab === 'documents' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <FileText className="w-4 h-4 mr-2" />
+              <FileText className="w-4 h-4 mr-1.5" />
               Bills & Quotations
             </button>
 
             <button
+              onClick={() => setActiveTab('eway-bills')}
+              className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === 'eway-bills' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <Truck className="w-4 h-4 mr-1.5 text-amber-400" />
+              E-Way Bills
+            </button>
+
+            <button
               onClick={() => setActiveTab('letters')}
-              className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${
                 activeTab === 'letters' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <FileSignature className="w-4 h-4 mr-2" />
+              <FileSignature className="w-4 h-4 mr-1.5" />
               Company Letterpad
             </button>
 
             <button
               onClick={() => setActiveTab('customers')}
-              className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${
                 activeTab === 'customers' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <Users className="w-4 h-4 mr-2" />
+              <Users className="w-4 h-4 mr-1.5" />
               Customers
             </button>
 
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center px-3 py-2 rounded-xl text-xs font-bold transition ${
                 activeTab === 'settings' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <Settings className="w-4 h-4 mr-2" />
+              <Settings className="w-4 h-4 mr-1.5" />
               Company Profile
             </button>
           </nav>
