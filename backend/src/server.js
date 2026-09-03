@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { dbQuery } = require('./db');
 
 const app = express();
@@ -15,8 +16,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve frontend production build statically
-const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+// Smart static file path resolution for Linux/Render/Windows
+let frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+if (!fs.existsSync(frontendDistPath)) {
+  frontendDistPath = path.resolve(process.cwd(), 'frontend/dist');
+}
+if (!fs.existsSync(frontendDistPath)) {
+  frontendDistPath = path.resolve(process.cwd(), '../frontend/dist');
+}
+
+console.log(`[Server] Serving frontend static assets from: ${frontendDistPath}`);
 app.use(express.static(frontendDistPath));
 
 // -------------------------------------------------------------
@@ -693,7 +702,11 @@ app.get('/api/dashboard/stats', async (req, res) => {
 // Fallback for single page application routing
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  res.status(200).send('DK Enterprise Server is Running!');
 });
 
 // Start Server
