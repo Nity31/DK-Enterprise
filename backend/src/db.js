@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const dbPath = path.resolve(__dirname, '../hydraulic_billing.db');
 
@@ -16,6 +17,16 @@ function initTables() {
   db.serialize(() => {
     // Foreign key support
     db.run("PRAGMA foreign_keys = ON;");
+
+    // Auth & Password Security Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS auth_settings (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        is_auth_enabled INTEGER DEFAULT 1,
+        password_hash TEXT NOT NULL,
+        secret_key TEXT NOT NULL
+      );
+    `);
 
     // Company Info Table
     db.run(`
@@ -139,6 +150,22 @@ function initTables() {
 }
 
 function seedInitialData() {
+  // Check auth settings
+  db.get("SELECT COUNT(*) AS count FROM auth_settings", (err, row) => {
+    if (row && row.count === 0) {
+      const defaultPassword = 'admin';
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(defaultPassword, salt);
+      const secret = 'DK_ENTERPRISE_SECRET_' + Math.random().toString(36).substring(2);
+
+      db.run(`
+        INSERT INTO auth_settings (id, is_auth_enabled, password_hash, secret_key)
+        VALUES (1, 1, ?, ?)
+      `, [hash, secret]);
+      console.log('Seeded default security auth settings (Master password: admin)');
+    }
+  });
+
   // Check company info
   db.get("SELECT COUNT(*) AS count FROM company_info", (err, row) => {
     if (row && row.count === 0) {

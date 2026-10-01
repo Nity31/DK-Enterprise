@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import DocumentList from './components/DocumentList';
@@ -9,6 +10,7 @@ import EWayBillManager from './components/EWayBillManager';
 import EWayBillPrint from './components/EWayBillPrint';
 import CustomerManager from './components/CustomerManager';
 import CompanySettings from './components/CompanySettings';
+import LoginModal from './components/LoginModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -16,6 +18,34 @@ export default function App() {
   const [selectedEwbId, setSelectedEwbId] = useState(null);
   const [preselectDocIdForEwb, setPreselectDocIdForEwb] = useState('');
   const [formType, setFormType] = useState('TAX_INVOICE');
+
+  // Security Auth State
+  const [isAuthRequired, setIsAuthRequired] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('dk_auth_token');
+      if (token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await axios.get('/api/auth/status');
+      setIsAuthRequired(res.data.isAuthEnabled);
+      setIsAuthenticated(res.data.isAuthenticated);
+    } catch (err) {
+      console.error('Auth status check failed:', err);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('dk_auth_token');
+    delete axios.defaults.headers.common['Authorization'];
+    setIsAuthenticated(false);
+  };
 
   const handleNewDocument = (type = 'TAX_INVOICE') => {
     setSelectedDocId(null);
@@ -54,11 +84,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      {/* Security Master Lock Screen */}
+      {isAuthRequired && !isAuthenticated && (
+        <LoginModal onLoginSuccess={() => setIsAuthenticated(true)} />
+      )}
+
       {/* Navigation Bar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onNewDocument={handleNewDocument}
+        onLogout={handleLogout}
+        isAuthRequired={isAuthRequired}
       />
 
       {/* Main Content Area */}
@@ -116,13 +153,16 @@ export default function App() {
 
         {activeTab === 'customers' && <CustomerManager />}
 
-        {activeTab === 'settings' && <CompanySettings />}
+        {activeTab === 'settings' && <CompanySettings onAuthStatusChange={checkAuthStatus} />}
       </main>
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 no-print text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 font-semibold">
-          DK Enterprise - Billing, E-Way Bill & Letterpad System &copy; {new Date().getFullYear()}
+        <div className="max-w-7xl mx-auto px-4 font-semibold flex items-center justify-between">
+          <span>DK Enterprise - Billing, E-Way Bill & Letterpad System &copy; {new Date().getFullYear()}</span>
+          <span className="text-emerald-600 font-bold flex items-center gap-1">
+            🔒 Protected by Master Security Lock
+          </span>
         </div>
       </footer>
     </div>

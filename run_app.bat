@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 :: Check if port 5000 is already active
 netstat -o -n -a | findstr ":5000 " >nul 2>&1
 if %ERRORLEVEL% == 0 (
-    start http://localhost:5000
+    start http://dkenterprise.com
     exit /b 0
 )
 
@@ -19,6 +19,6 @@ timeout /t 2 /nobreak >nul
 cd /d "%~dp0"
 start /b cloudflared.exe tunnel --url http://localhost:5000 >nul 2>&1
 
-:: Open browser
-start http://localhost:5000
+:: Open custom domain browser URL
+start http://dkenterprise.com
 exit /b 0

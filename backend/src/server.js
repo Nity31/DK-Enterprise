@@ -2,13 +2,32 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { dbQuery } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Security HTTP Headers
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Allow inline styles & local fonts for printing
+    crossOriginEmbedderPolicy: false
+  })
+);
+
 app.use(cors());
 app.use(express.json());
+
+// Rate Limiter for Login Brute Force Protection
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: { error: 'Too many login attempts from this IP. Please try again after 15 minutes.' }
+});
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -27,6 +46,98 @@ if (!fs.existsSync(frontendDistPath)) {
 
 console.log(`[Server] Serving frontend static assets from: ${frontendDistPath}`);
 app.use(express.static(frontendDistPath));
+
+// -------------------------------------------------------------
+// 0. AUTHENTICATION & SECURITY ROUTES
+// -------------------------------------------------------------
+
+// Get Security & Auth Status
+app.get('/api/auth/status', async (req, res) => {
+  try {
+    const auth = await dbQuery.get('SELECT is_auth_enabled FROM auth_settings WHERE id = 1');
+    const isEnabled = auth ? auth.is_auth_enabled === 1 : false;
+
+    // Verify token if provided
+    let isAuthenticated = !isEnabled;
+    const authHeader = req.headers.authorization;
+    if (isEnabled && authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const authDb = await dbQuery.get('SELECT secret_key FROM auth_settings WHERE id = 1');
+      try {
+        jwt.verify(token, authDb ? authDb.secret_key : 'DK_SECRET');
+        isAuthenticated = true;
+      } catch (e) {
+        isAuthenticated = false;
+      }
+    }
+
+    res.json({ isAuthEnabled: isEnabled, isAuthenticated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Login
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const auth = await dbQuery.get('SELECT * FROM auth_settings WHERE id = 1');
+    if (!auth) {
+      return res.status(500).json({ error: 'Auth settings not initialized' });
+    }
+
+    const isMatch = bcrypt.compareSync(password, auth.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid Master Password' });
+    }
+
+    // Generate JWT token valid for 30 days
+    const token = jwt.sign({ app: 'DK_Enterprise', role: 'admin' }, auth.secret_key, { expiresIn: '30d' });
+
+    res.json({ success: true, token, message: 'Authentication successful' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update Master Password
+app.put('/api/auth/password', async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password are required' });
+    }
+
+    const auth = await dbQuery.get('SELECT * FROM auth_settings WHERE id = 1');
+    const isMatch = bcrypt.compareSync(currentPassword, auth.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Incorrect Current Password' });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const newHash = bcrypt.hashSync(newPassword, salt);
+    await dbQuery.run('UPDATE auth_settings SET password_hash = ? WHERE id = 1', [newHash]);
+
+    res.json({ success: true, message: 'Master Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Toggle Auth Requirement
+app.put('/api/auth/toggle', async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    await dbQuery.run('UPDATE auth_settings SET is_auth_enabled = ? WHERE id = 1', [enabled ? 1 : 0]);
+    res.json({ success: true, isAuthEnabled: !!enabled });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // -------------------------------------------------------------
 // 1. COMPANY PROFILE ROUTES

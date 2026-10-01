@@ -7,10 +7,11 @@ import {
   LayoutDashboard,
   Hammer,
   FileSignature,
-  Truck
+  Truck,
+  LogOut
 } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
+export default function Navbar({ activeTab, setActiveTab, onNewDocument, onLogout, isAuthRequired }) {
   return (
     <header className="bg-slate-900 text-white shadow-md no-print border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -103,7 +104,7 @@ export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
             </button>
           </nav>
 
-          {/* Quick Action Buttons */}
+          {/* Quick Action Buttons & Logout */}
           <div className="flex items-center space-x-2">
             <button
               onClick={() => onNewDocument('LABOUR_BILL')}
@@ -128,6 +129,16 @@ export default function Navbar({ activeTab, setActiveTab, onNewDocument }) {
               <PlusCircle className="w-4 h-4 mr-1.5" />
               Tax Invoice
             </button>
+
+            {isAuthRequired && (
+              <button
+                onClick={onLogout}
+                title="Lock System Access"
+                className="flex items-center px-2.5 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white text-xs font-bold rounded-xl border border-red-500/30 transition"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
